@@ -275,46 +275,48 @@ bool isSphereIntersected(const Scene* scene, const Ray* r, const float t)
 
 bool isPlaneIntersected(const Scene* scene, const Ray* r, float* t, unsigned int* planeIndex)
 {
-	bool didHit = false;
-	//float optimal = INFINITY;
-	for (int i = 0; i < scene->numPlanes; i++) {
+	float startingT = *t;
 
-		float angle = r->dir * scene->planeContainerAoS.normal[i];
+	const __m256 zeros = _mm256_set1_ps(0.0f);
+	const __m256 epsilons = _mm256_set1_ps(EPSILON);
 
-		if (angle != 0.0f) {
-			// find point of intersection
-			float t0 = ((scene->planeContainerAoS.pos[i] - r->start) * scene->planeContainerAoS.normal[i]) / angle;
+	__m256 ts = _mm256_set1_ps(startingT);
+	__m256i planeIndexes = _mm256_set1_epi32(*planeIndex);
 
-			if (t0 > EPSILON && t0 < *t)// && t0 < optimal)
-			{
-				*t = t0;
-				*planeIndex = i;
-				didHit = true;
-			}
-		}
+	// ray start and direction
+	Vector8 rStart(r->start.x, r->start.y, r->start.z);
+	Vector8 rDir(r->dir.x, r->dir.y, r->dir.z);
 
-		/*
-		// angle between ray and surface normal
-		float angle = r->dir * scene->planeContainer[i].normal;
+	const __m256i eights = _mm256_set1_epi32(8);
+	__m256i ijs = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7); //suss
 
-		// no intersection if ray and plane are parallel
-		if (angle != 0.0f) {
-			// find point of intersection
-			float t0 = ((scene->planeContainer[i].pos - r->start) * scene->planeContainer[i].normal) / angle;
+	for (int i = 0; i < scene->numPlanesSIMD; i++) {
+		//Vector8 normals(scene->planeContainerAoS.normal[i].x, scene->planeContainerAoS.normal[i].y, scene->planeContainerAoS.normal[i].z);
+		Vector8 normals(scene->planeNormalX[i], scene->planeNormalY[i], scene->planeNormalZ[i]);
+		//Vector8 poses(scene->planeContainerAoS.pos[i].x, scene->planeContainerAoS.pos[i].y, scene->planeContainerAoS.pos[i].z);
+		Vector8 poses(scene->planePosX[i], scene->planePosY[i], scene->planePosZ[i]);
 
-			if (t0 > EPSILON && t0 < *t)// && t0 < optimal)
-			{
-				*t = t0;
-				*planeIndex = i;
-				didHit = true;
-			}
-		}*/
+		__m256 angles = dot(rDir, normals);
 
+		__m256 t0s = dot((poses - rStart), normals) / angles;
+
+		//else if ((t0 > EPSILON) && (t0 < t))
+		__m256 t0GreaterThanEpsilonAndSmallerThanTs = (t0s > epsilons) & (t0s < ts);
+
+		__m256 succ = _mm256_and_ps(t0GreaterThanEpsilonAndSmallerThanTs, angles != zeros);
+
+		planeIndexes = select(_mm256_castps_si256(t0GreaterThanEpsilonAndSmallerThanTs), ijs, planeIndexes);
 		
+		ts = select(t0GreaterThanEpsilonAndSmallerThanTs, t0s, ts);
+		//planeIndexes = select(succ, planeIndexes, );
 
+		//if (_mm256_movemask_ps(succ)) return true;
+		ijs = _mm256_add_epi32(ijs, eights); //suss
 	}
 
-	return didHit;
+	selectMinimumAndIndex(ts, planeIndexes, t, planeIndex);
+
+	return *t < startingT;
 	
 }
 
@@ -348,28 +350,7 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, const float t)
 
 
 		__m256 succ = _mm256_and_ps(t0GreaterThanEpsilonAndSmallerThanTs, angles != zeros);
-		//__m256 succ = _mm256_andnot_ps(t0GreaterThanEpsilonAndSmallerThanTs, _mm256_cmp_ps(angles, zeros, _CMP_EQ_OQ));
-		
-		//__m256 succ = _mm256_andnot_ps(_mm256_cmp_ps(angles, zeros, _CMP_EQ_OQ), _mm256_and_ps(_mm256_cmp_ps(t0s, epsilons, _CMP_GT_OQ), _mm256_cmp_ps(t0s, ts, _CMP_LT_OQ)));
-		
-		//__m256 succ = _mm256_andnot_ps(_mm256_and_ps(_mm256_cmp_ps(t0s, epsilons, _CMP_GT_OQ), _mm256_cmp_ps(t0s, ts, _CMP_LT_OQ)), _mm256_cmp_ps(angles, zeros, _CMP_EQ_OQ));
-		/*
-		// angle between ray and surface normal
-		float angle = r->dir * scene->planeContainerAoS.normal[i];
 
-		// no intersection if ray and plane are parallel
-		if (angle != 0.0f) {
-			// find point of intersection
-			float t0 = ((scene->planeContainerAoS.pos[i] - r->start) * scene->planeContainerAoS.normal[i]) / angle;
-
-			if (t0 > EPSILON && t0 < t)// && t0 < optimal)
-			{
-				return true;
-			}
-		}*/
-		/*for (int i = 0; i < 8; i++) {
-			if (succ.m256_f32[i]) return true;
-		}*/
 		if (_mm256_movemask_ps(succ)) return true;
 	}
 
