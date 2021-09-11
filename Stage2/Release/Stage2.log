@@ -1,0 +1,9 @@
+﻿  Intersection.cpp
+D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage2\Intersection.cpp(280,20): warning C4018: '<': signed/unsigned mismatch
+D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage2\Intersection.cpp(325,20): warning C4018: '<': signed/unsigned mismatch
+  Generating code
+  6 of 497 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  Stage2.vcxproj -> D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Release\Stage2.exe

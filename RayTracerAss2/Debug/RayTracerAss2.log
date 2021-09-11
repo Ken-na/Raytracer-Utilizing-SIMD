@@ -1,0 +1,9 @@
+﻿  Config.cpp
+  ImageIO.cpp
+  Intersection.cpp
+  Lighting.cpp
+  Raytrace.cpp
+  Scene.cpp
+  Texturing.cpp
+  Generating Code...
+  RayTracerAss2.vcxproj -> D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Debug\RayTracerAss2.exe
