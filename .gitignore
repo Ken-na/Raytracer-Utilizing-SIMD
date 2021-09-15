@@ -1,0 +1,10 @@
+
+*.json
+*.sqlite
+*.ipch
+*.db
+.vs/RayTracerAss2/v16/.suo
+*.db-shm
+.vs/RayTracerAss2/v16/Browse.VC.db-wal
+*.opendb
+*.db-wal
