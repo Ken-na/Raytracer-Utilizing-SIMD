@@ -291,6 +291,48 @@ void simdifySceneContainers(Scene& scene)
 	// helper size (so we don't just have 8 everywhere)
 	unsigned int valuesPerVector = sizeof(__m256) / sizeof(float);
 
+	if (scene.numCylinders == 0) {
+		scene.numCylSIMD = 0;
+	}
+	else {
+		scene.numCylSIMD = (((int)scene.numCylinders) - 1) / valuesPerVector + 1;
+
+		// allocate the correct amount of space at the correct alignment for SIMD operations
+		scene.cylPos1X = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+		scene.cylPos1Y = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+		scene.cylPos1Z = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+
+		scene.cylPos2X = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+		scene.cylPos2Y = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+		scene.cylPos2Z = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+
+		scene.cylSize = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numCylSIMD, 32);
+
+		scene.cylMaterialId = (__m256i*) _aligned_malloc(sizeof(__m256i) * scene.numCylSIMD, 32);
+
+		// initialise SoA structures
+		for (unsigned int i = 0; i < scene.numCylSIMD * valuesPerVector; ++i)
+		{
+			// don't let the source index extend out of the AoS array
+			// i.e. copy the last value into the extra array slots when numSpheres isn't exactly divisible by 8
+			// pretty lazy way to fix this, but it works
+			int sourceIndex = i < scene.numCylinders ? i : scene.numCylinders - 1;
+
+			scene.cylPos1X[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p1.x;
+			scene.cylPos1Y[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p1.y;
+			scene.cylPos1Z[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p1.z;
+
+			scene.cylPos2X[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p2.x;
+			scene.cylPos2Y[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p2.y;
+			scene.cylPos2Z[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].p2.z;
+
+			scene.cylSize[i / valuesPerVector].m256_f32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].size;
+			scene.cylMaterialId[i / valuesPerVector].m256i_i32[i % valuesPerVector] = scene.cylinderContainer[sourceIndex].materialId;
+		}
+	}
+
+
+
 	if (scene.numPlanes == 0) {
 		scene.numPlanesSIMD = 0;
 	}

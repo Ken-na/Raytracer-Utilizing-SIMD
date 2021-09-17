@@ -36,6 +36,12 @@ __forceinline __m256i select(__m256i cond, __m256i ifTrue, __m256i ifFalse)
 	//return _mm256_or_si256(_mm256_and_si256(cond, ifTrue), _mm256_andnot_si256(cond, ifFalse));
 }
 
+__forceinline __m256 abs(__m256 cond)
+{
+	return _mm256_setr_ps(abs(cond.m256_f32[0]), abs(cond.m256_f32[1]), abs(cond.m256_f32[2]), abs(cond.m256_f32[3]), abs(cond.m256_f32[4]), abs(cond.m256_f32[5]), abs(cond.m256_f32[6]), abs(cond.m256_f32[7]));
+	//return _mm256_or_ps(_mm256_and_ps(cond, ifTrue), _mm256_andnot_ps(cond, ifFalse));
+}
+
 
 // Represent 8 vectors in one struct
 struct Vector8

@@ -62,6 +62,18 @@ typedef struct Scene
 	__m256* planeNormalZ;
 	__m256i* planeMaterialId;
 
+	//SIMD Cyl
+	unsigned int numCylSIMD;
+	__m256* cylPos1X;
+	__m256* cylPos1Y;
+	__m256* cylPos1Z;
+	__m256* cylPos2X;
+	__m256* cylPos2Y;
+	__m256* cylPos2Z;
+	__m256* cylSize;
+	__m256i* cylMaterialId;
+
+
 	// SIMD spheres
 	unsigned int numSpheresSIMD;
 	__m256* spherePosX;
