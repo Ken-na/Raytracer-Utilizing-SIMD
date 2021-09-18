@@ -405,6 +405,7 @@ bool isCylinderIntersected(const Cylinder* cy, const Ray* r, float* t, Vector* n
 		{
 			*t = tBody;
 			*normal = (oc + (r->dir * tBody - ca * y / caca)) / cy->size;
+			//printf("A %f, %f, %f\n", normal->x, normal->y, normal->z);
 			return true;
 		}
 	}
@@ -420,6 +421,7 @@ bool isCylinderIntersected(const Cylinder* cy, const Ray* r, float* t, Vector* n
 		{
 			*t = tCaps;
 			*normal = ca * invsqrtf(caca) * sign(y);
+			//printf("B %f, %f, %f\n", normal->x, normal->y, normal->z);
 			return true;
 		}
 	}

@@ -451,7 +451,7 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 		__m256 success = _mm256_and_ps(yGreaterThanZeroAndSmallerThanCaca, tBodyGreaterThanEpsilonAndSmallerThanT);
 
 		ts = select(success, tBody, ts);
-		indexes = select(_mm256_castps_si256(success), indexes, ijs);
+		indexes = select(_mm256_castps_si256(success), ijs, indexes);
 		normals = select(success, (oc + (rDir * tBody - ca * y / caca)) / sizes, normals);
 
 		/*for (int j = 0; j < 8; j++) {
@@ -501,7 +501,7 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 		__m256 success2 = (abs(b + a * tCaps) < h) & (tCaps > epsilons & tCaps < ts);
 
 		ts = select(success2, tCaps, ts);
-		indexes = select(_mm256_castps_si256(success2), indexes, ijs);
+		indexes = select(_mm256_castps_si256(success2), ijs, indexes);
 
 		//__m256 signLessThan = y;
 
@@ -530,18 +530,50 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 
 	selectMinimumAndIndex(ts, indexes, t, planeIndex);
 
+
+	/*float* xn = 0;
+	float* xy = 0;
+	float* xz = 0;
+	selectMinimumAndIndex(normals.xs, indexes, xn, planeIndex);
+	selectMinimumAndIndex(normals.ys, indexes, xy, planeIndex);
+	selectMinimumAndIndex(normals.zs, indexes, xz, planeIndex);*/
+
 	//selectMinimumAndIndex(normals, indexes, normal, planeIndex);
 
 	//Vector newNormal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
+	Vector joe = { normals.xs.m256_f32[*planeIndex % 8], normals.ys.m256_f32[*planeIndex % 8], normals.zs.m256_f32[*planeIndex % 8] };
+	//printf("A %f, %f, %f\n", normals.xs.m256_f32[minDex], normals.ys.m256_f32[minDex], normals.zs.m256_f32[minDex]);
+	//printf("B %f, %f, %f\n", joe.x, joe.y, joe.z);
 
-	if (*t < tInitial) {
+
+	*normal = joe;
+	/*if (*t < tInitial) {
 		//printf("%d", *planeIndex);
-		*normal = { normals.xs.m256_f32[*planeIndex % 8], normals.ys.m256_f32[*planeIndex % 8], normals.zs.m256_f32[*planeIndex % 8] };
+		float min = INFINITY;
+		int minDex = -1;
+		for (int i = 0; i < 8; i++) {
+			if (ts.m256_f32[i] < min) {
+				min = ts.m256_f32[i];
+				minDex = i;
+			}
+
+			
+			//printf("A(%d) %f, %f, %f\n", i, normals.xs.m256_f32[i], normals.ys.m256_f32[i], normals.zs.m256_f32[i]);
+
+		}
+		printf("%d, %u\n",minDex, *planeIndex);
+		Vector joe = { normals.xs.m256_f32[minDex], normals.ys.m256_f32[minDex], normals.zs.m256_f32[minDex] };
+		//printf("A %f, %f, %f\n", normals.xs.m256_f32[minDex], normals.ys.m256_f32[minDex], normals.zs.m256_f32[minDex]);
+		//printf("B %f, %f, %f\n", joe.x, joe.y, joe.z);
+
+		
+		*normal = joe;
+		//*normal = { normals.xs.m256_f32[*planeIndex % 8], normals.ys.m256_f32[*planeIndex % 8], normals.zs.m256_f32[*planeIndex % 8] };
 		
 		//works for all but donut.
 		//*normal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
 
-	}
+	}*/
 	
 
 	return *t < tInitial;
@@ -675,6 +707,7 @@ void calculateIntersectionResponse(const Scene* scene, const Ray* viewRay, Inter
 	case Intersection::PrimitiveType::CYLINDER:
 		// normal already returned from intersection function, so nothing to do here
 		intersect->material = &scene->materialContainer[intersect->cylinder->materialId];
+		//printf("Mat-ID: %d", intersect->cylinder->materialId);
 		break;
 	}
 
@@ -725,6 +758,7 @@ bool objectIntersection(const Scene* scene, const Ray* viewRay, Intersection* in
 	//if (isCylinderIntersected(scene, )) {
 		intersect->objectType = Intersection::PrimitiveType::CYLINDER;
 		intersect->normal = normal;
+		//printf("r: %d, %d", scene->numCylinders, cylinderIndex);
 		intersect->cylinder = &scene->cylinderContainer[cylinderIndex];
 	}
 
