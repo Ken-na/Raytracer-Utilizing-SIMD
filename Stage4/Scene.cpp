@@ -89,6 +89,7 @@ bool GetPlane(const Config& sceneFile, const Scene& scene, Plane& currentPlane)
 
 bool GetCylinder(const Config& sceneFile, const Scene& scene, Cylinder& currentCylinder)
 {
+	
 	currentCylinder.p1 = sceneFile.GetByNameAsPoint("Point1", Origin);
 	currentCylinder.p2 = sceneFile.GetByNameAsPoint("Point2", Origin);
 	currentCylinder.size = float(sceneFile.GetByNameAsFloat("Size", 0.0f));

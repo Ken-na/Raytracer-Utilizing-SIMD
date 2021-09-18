@@ -366,6 +366,7 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, const float t)
 // see: https://www.doc.ic.ac.uk/~dfg/graphics/graphics2010/GraphicsLecture11.pdf
 bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* normal, unsigned int* planeIndex)
 {
+	//printf("g\n");
 	bool didHit = false;
 	float tInitial = *t;
 	Vector8 rStart(r->start.x, r->start.y, r->start.z);
@@ -534,7 +535,11 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 	//Vector newNormal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
 
 	if (*t < tInitial) {
-		*normal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
+		//printf("%d", *planeIndex);
+		*normal = { normals.xs.m256_f32[*planeIndex % 8], normals.ys.m256_f32[*planeIndex % 8], normals.zs.m256_f32[*planeIndex % 8] };
+		
+		//works for all but donut.
+		//*normal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
 
 	}
 	
@@ -691,6 +696,7 @@ void calculateIntersectionResponse(const Scene* scene, const Ray* viewRay, Inter
 // updates intersection structure if collision occurs
 bool objectIntersection(const Scene* scene, const Ray* viewRay, Intersection* intersect)
 {
+	//printf("h");
 	// set default distance to be a long long way away
     float t = MAX_RAY_DISTANCE;
 

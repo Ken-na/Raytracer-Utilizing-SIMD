@@ -74,6 +74,7 @@ Colour traceRay(const Scene* scene, Ray viewRay)
 	{
 		// check for intersections between the view ray and any of the objects in the scene
 		// exit the loop if no intersection found
+
 		if (!objectIntersection(scene, &viewRay, &intersect)) break;
 
 		// calculate response to collision: ie. get normal at point of collision and material of object
@@ -131,6 +132,8 @@ unsigned int renderSection(Scene* scene, const int width, const int height, cons
 
 	// current block index
 	unsigned int currentBlock;
+	
+
 
 	while ((currentBlock = InterlockedIncrement(currentBlockShared)) < blocksTotal)
 	{
@@ -252,6 +255,7 @@ unsigned int render(const unsigned int threadCount, Scene* scene, const int widt
 
 	// one less than the current block to render (shared between threads)
 	unsigned int currentBlockShared = -1;
+	
 
 	// loop through all the squares
 	for (unsigned int i = 0; i < threadCount; ++i)
@@ -431,11 +435,11 @@ void createAoSCyl(Scene& scene) {
 		(Point*)malloc(sizeof(Point) * scene.numCylinders),
 		(Point*)malloc(sizeof(Point) * scene.numCylinders),
 		(float*)malloc(sizeof(float) * scene.numCylinders),
-		(unsigned int*)malloc(sizeof(unsigned int) * scene.numPlanes)
+		(unsigned int*)malloc(sizeof(unsigned int) * scene.numCylinders)
 	};
+	
 
 	for (int i = 0; i < scene.numCylinders; i++) {
-
 		scene.cylContainerAoS.p1[i] = scene.cylinderContainer[i].p1;
 		scene.cylContainerAoS.p2[i] = scene.cylinderContainer[i].p2;
 		scene.cylContainerAoS.size[i] = scene.cylinderContainer[i].size;
@@ -460,7 +464,8 @@ int main(int argc, char* argv[])
 	unsigned int blockSize = 16;
 
 	// default input / output filenames
-	const char* inputFilename = "Scenes/cornell.txt";
+	const char* inputFilename = "Scenes/donuts.txt";
+	//const char* inputFilename = "Scenes/cornell.txt";
 
 	char outputFilenameBuffer[1000];
 	char* outputFilename = outputFilenameBuffer;
@@ -521,12 +526,13 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Failure when reading the Scene file.\n");
 		return -1;
 	}
-
+	
 	// do the SoA things
 	simdifySceneContainers(scene);
 	createAoSPlane(scene);
-	createAoSCyl(scene);
 
+	createAoSCyl(scene);
+	
 	// total time taken to render all runs (used to calculate average)
 	int totalTime = 0;
 	int samplesRendered = 0;

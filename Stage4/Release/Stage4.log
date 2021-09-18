@@ -1,8 +1,8 @@
 ﻿  Intersection.cpp
 D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(293,20): warning C4018: '<': signed/unsigned mismatch
 D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(337,20): warning C4018: '<': signed/unsigned mismatch
-D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(388,20): warning C4018: '<': signed/unsigned mismatch
-D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(556,20): warning C4018: '<': signed/unsigned mismatch
+D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(389,20): warning C4018: '<': signed/unsigned mismatch
+D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\Stage4\Intersection.cpp(561,20): warning C4018: '<': signed/unsigned mismatch
   Generating code
   1 of 503 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
