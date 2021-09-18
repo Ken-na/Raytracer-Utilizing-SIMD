@@ -367,40 +367,115 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, const float t)
 bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* normal, unsigned int* planeIndex)
 {
 	bool didHit = false;
-	for (int i = 0; i < scene->numCylinders; i++) {
+	float tInitial = *t;
+	Vector8 rStart(r->start.x, r->start.y, r->start.z);
+	Vector8 rDir(r->dir.x, r->dir.y, r->dir.z);
+	const __m256 minusOnes = _mm256_set1_ps(-1.0f);
+	const __m256 zeros = _mm256_set1_ps(0.0f);
+	const __m256 onesp1 = _mm256_set1_ps(1.0f);
+	//const Vector8 ones(onesp1, onesp1, onesp1);
+	const __m256 epsilons = _mm256_set1_ps(EPSILON);
+	__m256 ts = _mm256_set1_ps(tInitial);
+
+	__m256i indexes = _mm256_set1_epi32(*planeIndex);
+	// current corresponding index
+	__m256i ijs = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+
+	Vector8 normals(normal->x, normal->y, normal->z);
+
+	const __m256i eights = _mm256_set1_epi32(8);
+
+	for (int i = 0; i < scene->numCylSIMD; i++) {
 		// vector between start and end of the cylinder (cylinder axis, i.e. ca)
-		Vector ca = scene->cylContainerAoS.p2[i] - scene->cylContainerAoS.p1[i];
+		//Vector ca = scene->cylContainerAoS.p2[i] - scene->cylContainerAoS.p1[i];
+
+		Vector8 p1(scene->cylPos1X[i], scene->cylPos1Y[i], scene->cylPos1Z[i]);
+		Vector8 p2(scene->cylPos2X[i], scene->cylPos2Y[i], scene->cylPos2Z[i]);
+		__m256 sizes = _mm256_setr_ps(scene->cylContainerAoS.size[ijs.m256i_i32[0]], scene->cylContainerAoS.size[ijs.m256i_i32[1]], scene->cylContainerAoS.size[ijs.m256i_i32[2]], scene->cylContainerAoS.size[ijs.m256i_i32[3]], scene->cylContainerAoS.size[ijs.m256i_i32[4]], scene->cylContainerAoS.size[ijs.m256i_i32[5]], scene->cylContainerAoS.size[ijs.m256i_i32[6]], scene->cylContainerAoS.size[ijs.m256i_i32[7]]);
+		//__m256 sizes = _mm256_set1_ps(1);
+
+		// vector between start and end of the cylinder (cylinder axis, i.e. ca)
+		//Vector ca = scene->cylContainerAoS.p2[i] - scene->cylContainerAoS.p1[i];
+		Vector8 ca = p2 - p1;
 
 		// vector between ray origin and start of the cylinder
-		Vector oc = r->start - scene->cylContainerAoS.p1[i];
+		//Vector oc = r->start - scene->cylContainerAoS.p1[i];
+		// vector between ray origin and start of the cylinder
+		//Vector oc = r->start - scene->cylContainerAoS.p1[i];
+		Vector8 oc = rStart - p1;
+
 
 		// cache some dot-products 
-		float caca = ca * ca;
-		float card = ca * r->dir;
-		float caoc = ca * oc;
+		//float caca = ca * ca;
+		//float card = ca * r->dir;
+		//float caoc = ca * oc;
+		__m256 caca = dot(ca, ca);
+		__m256 card = dot(ca, rDir);
+		__m256 caoc = dot(ca, oc);
 
 		// calculate values for coefficients of line-cylinder equation
-		float a = caca - card * card;
-		float b = caca * (oc * r->dir) - caoc * card;
-		float c = caca * (oc * oc) - caoc * caoc - scene->cylContainerAoS.size[i] * scene->cylContainerAoS.size[i] * caca;
+		//float a = caca - card * card;
+		//float b = caca * (oc * r->dir) - caoc * card;
+		//float c = caca * (oc * oc) - caoc * caoc - scene->cylContainerAoS.size[i] * scene->cylContainerAoS.size[i] * caca;
+		__m256 a = caca - card * card;
+		__m256 bPreCalc = dot(oc, rDir);
+		__m256 b = caca * bPreCalc - caoc * card;
+		__m256 cPreCalc = dot(oc, oc);
+		__m256 c = caca * cPreCalc - caoc * caoc - scene->cylSize[i] * scene->cylSize[i] * caca;
 
 		// first half of distance calculation (distance squared)
-		float h = b * b - a * c;
+		//float h = b * b - a * c;
+		__m256 h = b * b - a * c;
 
 		// if ray doesn't intersect with infinite cylinder, exit
 		//if (h < 0.0f) return false;
 
 		// second half of distance calculation (distance)
-		h = sqrt(h);
+		//h = sqrt(h);
+		h = _mm256_sqrt_ps(h);
 
 		// calculate point of intersection (on infinite cylinder)
-		float tBody = (-b - h) / a;
+		//float tBody = (-b - h) / a;
+		__m256 tBodyPreCalc = b * minusOnes;
+		__m256 tBody = (tBodyPreCalc - h) / a;
 
 		// calculate distance along cylinder
-		float y = caoc + tBody * card;
+		//float y = caoc + tBody * card;
+		__m256 y = caoc + tBody * card;
+
+		__m256 yGreaterThanZeroAndSmallerThanCaca = (y > zeros) & (y < caca);
+
+		__m256 tBodyGreaterThanEpsilonAndSmallerThanT = (tBody > epsilons) & (tBody < ts);
+
+		__m256 success = _mm256_and_ps(yGreaterThanZeroAndSmallerThanCaca, tBodyGreaterThanEpsilonAndSmallerThanT);
+
+		ts = select(success, tBody, ts);
+		indexes = select(_mm256_castps_si256(success), indexes, ijs);
+		normals = select(success, (oc + (rDir * tBody - ca * y / caca)) / sizes, normals);
+
+		/*for (int j = 0; j < 8; j++) {
+			if (y.m256_f32[j] > 0 && y.m256_f32[j] < caca.m256_f32[j])
+			{
+				// check to see if the collision point on the cylinder body is closer than the time parameter
+				if (tBody.m256_f32[j] > epsilons.m256_f32[j] && tBody.m256_f32[j] < *t)
+				{
+					*t = tBody.m256_f32[j];
+					//*normal = (dot(oc, ones).m256_f32[j] + (dot(rDir, ones).m256_f32[j] * tBody.m256_f32[j] - dot(ca, ones).m256_f32[j] * y.m256_f32[j] / caca.m256_f32[j])) / scene->cylContainerAoS.size[i];
+					//*normal = (oc + (r->dir * tBody.m256_f32[j] - Vector(ca.xs.m256_f32[j], ca.ys.m256_f32[j], ca.zs.m256_f32[j]) * y / caca)) / scene->cylContainerAoS.size[i];
+					*planeIndex = i;
+					//return true;
+					didHit = true;
+				}
+			}
+		}*/
+		//Vector8 normal = (oc + (dot(rDir, tBody) - ca * y / caca)) / scene->cylContainerAoS.size[i];
+		
+		//indexes = _mm256_castps_si256(select(success, _mm256_castsi256_ps(indexes), ts));
+
+		//__m256i temp4 = select(_mm256_castps_si256(success), ijs, temp3);
 
 		// check intersection point is on the length of the cylinder
-		if (y > 0 && y < caca)
+		/*if (y > 0 && y < caca)
 		{
 			// check to see if the collision point on the cylinder body is closer than the time parameter
 			if (tBody > EPSILON && tBody < *t)
@@ -411,10 +486,29 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 				//return true;
 				didHit = true;
 			}
-		}
+		}*/
 
 		// calculate point of intersection on plane containing cap
-		float tCaps = (((y < 0.0f) ? 0.0f : caca) - caoc) / card;
+		//float tCaps = (((y < 0.0f) ? 0.0f : caca) - caoc) / card;
+		//__m256 tCaps = select(_mm256_cmp_ps(y, zeros, _CMP_LT_OQ), zeros, caca);
+		__m256 tCaps = select(y < zeros, zeros, caca);
+		tCaps = _mm256_sub_ps(tCaps, caoc);
+		tCaps = _mm256_div_ps(tCaps, card);
+
+		//__m256 loopCond = abs(b + a * tCaps);
+
+		__m256 success2 = (abs(b + a * tCaps) < h) & (tCaps > epsilons & tCaps < ts);
+
+		ts = select(success2, tCaps, ts);
+		indexes = select(_mm256_castps_si256(success2), indexes, ijs);
+
+		//__m256 signLessThan = y;
+
+		normals = select(success2, ca * _mm256_invsqrt_ps(caca) * sign(y), normals);
+		//normals = ca * invsqrtf(caca) * sign(y);
+
+		// calculate point of intersection on plane containing cap
+		/*float tCaps = (((y < 0.0f) ? 0.0f : caca) - caoc) / card;
 
 		// check intersection point is within the radius of the cap
 		if (abs(b + a * tCaps) < h)
@@ -428,10 +522,24 @@ bool isCylinderIntersected(const Scene* scene, const Ray* r, float* t, Vector* n
 				//return true;
 				didHit = true;
 			}
-		}
+		}*/
+
+		ijs = _mm256_add_epi32(ijs, eights);
 	}
 
-	return didHit;
+	selectMinimumAndIndex(ts, indexes, t, planeIndex);
+
+	//selectMinimumAndIndex(normals, indexes, normal, planeIndex);
+
+	//Vector newNormal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
+
+	if (*t < tInitial) {
+		*normal = { normals.xs.m256_f32[*planeIndex], normals.ys.m256_f32[*planeIndex], normals.zs.m256_f32[*planeIndex] };
+
+	}
+	
+
+	return *t < tInitial;
 }
 
 //short cuircuiting / part a

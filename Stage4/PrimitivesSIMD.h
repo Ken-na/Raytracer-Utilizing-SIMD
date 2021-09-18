@@ -42,6 +42,18 @@ __forceinline __m256 abs(__m256 cond)
 	//return _mm256_or_ps(_mm256_and_ps(cond, ifTrue), _mm256_andnot_ps(cond, ifFalse));
 }
 
+__forceinline __m256 sign(__m256 input)
+{
+	__m256 zero = _mm256_setzero_ps();
+
+	__m256 positive = _mm256_and_ps(_mm256_cmp_ps(input, zero, _CMP_GT_OQ), _mm256_set1_ps(1.0f));
+	__m256 negative = _mm256_and_ps(_mm256_cmp_ps(input, zero, _CMP_LT_OQ), _mm256_set1_ps(-1.0f));
+
+	return _mm256_or_ps(positive, negative);
+
+
+}
+
 
 // Represent 8 vectors in one struct
 struct Vector8
