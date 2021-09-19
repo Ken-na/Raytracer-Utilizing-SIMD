@@ -38,20 +38,24 @@ __forceinline __m256i select(__m256i cond, __m256i ifTrue, __m256i ifFalse)
 
 __forceinline __m256 abs(__m256 cond)
 {
-	return _mm256_setr_ps(abs(cond.m256_f32[0]), abs(cond.m256_f32[1]), abs(cond.m256_f32[2]), abs(cond.m256_f32[3]), abs(cond.m256_f32[4]), abs(cond.m256_f32[5]), abs(cond.m256_f32[6]), abs(cond.m256_f32[7]));
-	//return _mm256_or_ps(_mm256_and_ps(cond, ifTrue), _mm256_andnot_ps(cond, ifFalse));
+	__m256 minusOnes = _mm256_set1_ps(-1.0f);
+	__m256 zeros = _mm256_set1_ps(0.0f);
+
+	cond = select(_mm256_cmp_ps(cond, zeros, _CMP_LT_OQ), _mm256_mul_ps(minusOnes, cond), cond);
+
+	return cond;
 }
 
 __forceinline __m256 sign(__m256 input)
 {
-	__m256 zero = _mm256_setzero_ps();
+	__m256 zeros = _mm256_setzero_ps();
+	__m256 ones = _mm256_set1_ps(1.0f);
+	__m256 minusOnes = _mm256_set1_ps(-1.0f);
 
-	__m256 positive = _mm256_and_ps(_mm256_cmp_ps(input, zero, _CMP_GT_OQ), _mm256_set1_ps(1.0f));
-	__m256 negative = _mm256_and_ps(_mm256_cmp_ps(input, zero, _CMP_LT_OQ), _mm256_set1_ps(-1.0f));
+	__m256 positive = _mm256_and_ps(_mm256_cmp_ps(input, zeros, _CMP_GT_OQ), ones);
+	__m256 negative = _mm256_and_ps(_mm256_cmp_ps(input, zeros, _CMP_LT_OQ), minusOnes);
 
 	return _mm256_or_ps(positive, negative);
-
-
 }
 
 
