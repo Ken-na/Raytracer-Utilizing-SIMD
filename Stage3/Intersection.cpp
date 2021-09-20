@@ -290,7 +290,7 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, float* t, unsigned int
 	const __m256i eights = _mm256_set1_epi32(8);
 	__m256i ijs = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7); //suss
 
-	for (int i = 0; i < scene->numPlanesSIMD; i++) {
+	for (unsigned int i = 0; i < scene->numPlanesSIMD; i++) {
 		//Vector8 normals(scene->planeContainerAoS.normal[i].x, scene->planeContainerAoS.normal[i].y, scene->planeContainerAoS.normal[i].z);
 		Vector8 normals(scene->planeNormalX[i], scene->planeNormalY[i], scene->planeNormalZ[i]);
 		//Vector8 poses(scene->planeContainerAoS.pos[i].x, scene->planeContainerAoS.pos[i].y, scene->planeContainerAoS.pos[i].z);
@@ -300,17 +300,12 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, float* t, unsigned int
 
 		__m256 t0s = dot((poses - rStart), normals) / angles;
 
-		//else if ((t0 > EPSILON) && (t0 < t))
 		__m256 t0GreaterThanEpsilonAndSmallerThanTs = (t0s > epsilons) & (t0s < ts);
-
-		__m256 succ = _mm256_and_ps(t0GreaterThanEpsilonAndSmallerThanTs, angles != zeros);
 
 		planeIndexes = select(_mm256_castps_si256(t0GreaterThanEpsilonAndSmallerThanTs), ijs, planeIndexes);
 		
 		ts = select(t0GreaterThanEpsilonAndSmallerThanTs, t0s, ts);
-		//planeIndexes = select(succ, planeIndexes, );
 
-		//if (_mm256_movemask_ps(succ)) return true;
 		ijs = _mm256_add_epi32(ijs, eights); //suss
 	}
 
@@ -332,26 +327,19 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, const float t)
 	Vector8 rStart(r->start.x, r->start.y, r->start.z);
 	Vector8 rDir(r->dir.x, r->dir.y, r->dir.z);
 	
-	//bool didHit = false;
-	//float optimal = INFINITY;
-	for (int i = 0; i < scene->numPlanesSIMD; i++) {
-		//Vector8 normals(scene->planeContainerAoS.normal[i].x, scene->planeContainerAoS.normal[i].y, scene->planeContainerAoS.normal[i].z);
+	for (unsigned int i = 0; i < scene->numPlanesSIMD; i++) {
 		Vector8 normals(scene->planeNormalX[i], scene->planeNormalY[i], scene->planeNormalZ[i]);
-		//Vector8 poses(scene->planeContainerAoS.pos[i].x, scene->planeContainerAoS.pos[i].y, scene->planeContainerAoS.pos[i].z);
 		Vector8 poses(scene->planePosX[i], scene->planePosY[i], scene->planePosZ[i]);
 
 		__m256 angles = dot(rDir, normals);
 
 		__m256 t0s = dot((poses - rStart), normals) / angles;
 
-		//else if ((t0 > EPSILON) && (t0 < t))
 		__m256 t0GreaterThanEpsilonAndSmallerThanTs = (t0s > epsilons) & (t0s < ts);
 
+		__m256 success = _mm256_and_ps(t0GreaterThanEpsilonAndSmallerThanTs, angles != zeros);
 
-
-		__m256 succ = _mm256_and_ps(t0GreaterThanEpsilonAndSmallerThanTs, angles != zeros);
-
-		if (_mm256_movemask_ps(succ)) return true;
+		if (_mm256_movemask_ps(success)) return true;
 	}
 
 	return false;
@@ -488,16 +476,6 @@ bool objectIntersection(const Scene* scene, const Ray* viewRay, Intersection* in
 		intersect->objectType = Intersection::PrimitiveType::PLANE;
 		intersect->plane = &scene->planeContainer[planeIndex];
 	}
-
-	/*
-	for (unsigned int i = 0; i < scene->numPlanes; ++i)
-	{
-		if (isPlaneIntersected(&scene->planeContainer[i], viewRay, &t))
-		{
-			intersect->objectType = Intersection::PrimitiveType::PLANE;
-			intersect->plane = &scene->planeContainer[i];
-		}
-	}*/
 
 	// search for cylinder collisions, storing closest one found (and the normal at that point)
 	Vector normal;

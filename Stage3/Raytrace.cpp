@@ -337,8 +337,6 @@ void simdifySceneContainers(Scene& scene)
 		// mathemagical way of calculating ceilf(scene.numSpheres / 8.0f)
 		scene.numSpheresSIMD = (((int)scene.numSpheres) - 1) / valuesPerVector + 1;
 
-		
-
 		// allocate the correct amount of space at the correct alignment for SIMD operations
 		scene.spherePosX = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numSpheresSIMD, 32);
 		scene.spherePosY = (__m256*) _aligned_malloc(sizeof(__m256) * scene.numSpheresSIMD, 32);
@@ -365,16 +363,13 @@ void simdifySceneContainers(Scene& scene)
 
 void createAoSPlane(Scene& scene) {
 
-	//Point t[scene.numPlanes];
 	scene.planeContainerAoS = {
-		//Point x[scene.numPlanes],
-
 		(Point*) malloc(sizeof(Point) * scene.numPlanes),
 		(Vector*) malloc(sizeof(Vector) * scene.numPlanes),
 		(unsigned int*) malloc(sizeof(unsigned int) * scene.numPlanes)
 	};
 
-	for (int i = 0; i < scene.numPlanes; i++) {
+	for (unsigned int i = 0; i < scene.numPlanes; i++) {
 		scene.planeContainerAoS.pos[i] = scene.planeContainer[i].pos;
 		scene.planeContainerAoS.normal[i] = scene.planeContainer[i].normal;
 		scene.planeContainerAoS.materialId[i] = scene.planeContainer[i].materialId;

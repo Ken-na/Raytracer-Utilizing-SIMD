@@ -1,0 +1,12 @@
+﻿  Config.cpp
+  ImageIO.cpp
+  Intersection.cpp
+  Lighting.cpp
+  Raytrace.cpp
+  Scene.cpp
+  Texturing.cpp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 495 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Stage0_SIMDSpheres.vcxproj -> D:\Applications\Work\KIT308 MULTICORE\RayTracerAss2\FastRelease\Stage0_SIMDSpheres.exe

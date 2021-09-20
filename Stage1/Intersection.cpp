@@ -277,7 +277,7 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, float* t, unsigned int
 {
 	bool didHit = false;
 	//float optimal = INFINITY;
-	for (int i = 0; i < scene->numPlanes; i++) {
+	for (unsigned int i = 0; i < scene->numPlanes; i++) {
 		// angle between ray and surface normal
 		float angle = r->dir * scene->planeContainer[i].normal;
 
@@ -306,7 +306,7 @@ bool isPlaneIntersected(const Scene* scene, const Ray* r, const float t)
 {
 	//bool didHit = false;
 	//float optimal = INFINITY;
-	for (int i = 0; i < scene->numPlanes; i++) {
+	for (unsigned int i = 0; i < scene->numPlanes; i++) {
 		// angle between ray and surface normal
 		float angle = r->dir * scene->planeContainer[i].normal;
 

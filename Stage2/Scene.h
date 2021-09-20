@@ -35,8 +35,6 @@ typedef struct Scene
 	Plane* planeContainer;
 	Cylinder* cylinderContainer;
 
-	
-
 	struct planeContainerAoSStruct {
 		Point* pos;					// a point on the plane
 		Vector* normal;				// normal of the plane

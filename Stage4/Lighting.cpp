@@ -21,14 +21,6 @@ bool isInShadow(const Scene* scene, const Ray* lightRay, const float lightDist)
 	{
 		return true;
 	}
-	/*
-	for (unsigned int i = 0; i < scene->numPlanes; ++i)
-	{
-		if (isPlaneIntersected(&scene->planeContainer[i], lightRay, &t))
-		{
-			return true;
-		}
-	}*/
 
 	// search for cylinder collision
 	Vector normal; // unused here, but it's necessary for the function to work
